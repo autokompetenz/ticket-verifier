@@ -13,10 +13,19 @@ async function init() {
         type VARCHAR(16) NOT NULL,
         amount NUMERIC(10,2) NOT NULL,
         status VARCHAR(16) NOT NULL,
+        first_name VARCHAR(64),
+        last_name VARCHAR(64),
+        email VARCHAR(128),
         last_used TEXT,
         expiry_date TEXT,
         verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+    `);
+
+    await pool.query(`
+      ALTER TABLE tickets ADD COLUMN IF NOT EXISTS first_name VARCHAR(64);
+      ALTER TABLE tickets ADD COLUMN IF NOT EXISTS last_name VARCHAR(64);
+      ALTER TABLE tickets ADD COLUMN IF NOT EXISTS email VARCHAR(128);
     `);
 
     await pool.query(`

@@ -1,72 +1,80 @@
 import { useState, useCallback } from 'react';
 import { verifyTicket } from './api';
-import type { TicketInfo, TicketType, VerificationStatus } from './types';
+import type { TicketInfo, TicketType, VerificationStatus, VerifyRequest } from './types';
+
+const TICKET_TYPES: { value: TicketType; label: string }[] = [
+  { value: 'transcash', label: 'Transcash' },
+  { value: 'pcs', label: 'PCS' },
+  { value: 'itunes', label: 'iTunes' },
+  { value: 'neosurf', label: 'Neosurf' },
+  { value: 'steam', label: 'Steam' },
+  { value: 'cryptonow', label: 'CryptoNow' },
+];
 
 const TICKET_LABELS: Record<TicketType, string> = {
   transcash: 'Transcash',
   pcs: 'PCS',
+  itunes: 'iTunes',
   neosurf: 'Neosurf',
+  steam: 'Steam',
+  cryptonow: 'CryptoNow',
 };
 
-const STATUS_CONFIG: Record<VerificationStatus, { label: string; icon: string; className: string }> = {
-  valid: { label: 'Valide', icon: '\u2714', className: 'status-valid' },
-  used: { label: 'Déjà utilisé', icon: '\u2716', className: 'status-used' },
-  invalid: { label: 'Invalide', icon: '\u2716', className: 'status-invalid' },
-  expired: { label: 'Expiré', icon: '\u23F0', className: 'status-expired' },
+const STATUS_CONFIG: Record<VerificationStatus, { label: string; className: string }> = {
+  valid: { label: 'Valide', className: 'status-valid' },
+  used: { label: 'Déjà utilisé', className: 'status-used' },
+  invalid: { label: 'Invalide', className: 'status-invalid' },
+  expired: { label: 'Expiré', className: 'status-expired' },
 };
-
-function detectTicketType(value: string): TicketType | null {
-  const cleaned = value.replace(/[\s.-]/g, '');
-  if (/^\d{12}$/.test(cleaned)) return 'transcash';
-  if (/^\d{14}$/.test(cleaned)) return 'pcs';
-  if (/^\d{10}$/.test(cleaned)) return 'neosurf';
-  return null;
-}
 
 export default function Home() {
-  const [code, setCode] = useState('');
+  const [form, setForm] = useState<VerifyRequest>({
+    code: '',
+    type: 'transcash',
+    firstName: '',
+    lastName: '',
+    amount: 0,
+    email: '',
+  });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TicketInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [detectedType, setDetectedType] = useState<TicketType | null>(null);
 
-  const handleCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCode(value);
+  const update = useCallback((field: keyof VerifyRequest, value: string | number) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
     setResult(null);
     setError(null);
-    setDetectedType(detectTicketType(value));
   }, []);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = code.trim();
-    if (!trimmed) return;
+    if (!form.code.trim() || !form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || form.amount <= 0) return;
 
     setLoading(true);
     setResult(null);
     setError(null);
 
     try {
-      const response = await verifyTicket(trimmed);
+      const response = await verifyTicket(form);
       if (response.success && response.ticket) {
         setResult(response.ticket);
       } else {
         setError(response.error || 'Une erreur est survenue lors de la vérification.');
       }
     } catch {
-      setError('Erreur de connexion. Veuillez réessayer (le serveur API est-il démarré ?).');
+      setError('Erreur de connexion. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
-  }, [code]);
+  }, [form]);
 
   const handleReset = useCallback(() => {
-    setCode('');
+    setForm({ code: '', type: 'transcash', firstName: '', lastName: '', amount: 0, email: '' });
     setResult(null);
     setError(null);
-    setDetectedType(null);
   }, []);
+
+  const isFormValid = form.code.trim() && form.firstName.trim() && form.lastName.trim() && form.email.trim() && form.amount > 0;
 
   return (
     <div className="app">
@@ -92,7 +100,7 @@ export default function Home() {
               Vérifiez votre <span className="highlight">coupon</span> en quelques secondes
             </h1>
             <p className="hero-subtitle">
-              Contrôlez l'authenticité de vos tickets Transcash, PCS et Neosurf
+              Contrôlez l'authenticité de vos tickets Transcash, PCS, Neosurf, iTunes, Steam et CryptoNow
               avant de les utiliser. Rapide, sécurisé et 100% confidentiel.
             </p>
           </div>
@@ -109,33 +117,93 @@ export default function Home() {
                   </svg>
                 </div>
                 <h2>Vérifier un code</h2>
-                <p>Entrez le code à 12 chiffres figurant sur votre ticket de recharge</p>
+                <p>Remplissez le formulaire ci-dessous pour vérifier votre ticket</p>
               </div>
 
               <form onSubmit={handleSubmit} className="verify-form">
-                <div className="input-group">
+                <div className="form-group full">
+                  <label>Type de ticket</label>
+                  <select
+                    value={form.type}
+                    onChange={(e) => update('type', e.target.value as TicketType)}
+                    disabled={loading}
+                    className="form-select"
+                  >
+                    {TICKET_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Prénom</label>
+                    <input
+                      type="text"
+                      value={form.firstName}
+                      onChange={(e) => update('firstName', e.target.value)}
+                      placeholder="Jean"
+                      disabled={loading}
+                      autoComplete="given-name"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Nom</label>
+                    <input
+                      type="text"
+                      value={form.lastName}
+                      onChange={(e) => update('lastName', e.target.value)}
+                      placeholder="Dupont"
+                      disabled={loading}
+                      autoComplete="family-name"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Montant (€)</label>
+                    <input
+                      type="number"
+                      value={form.amount || ''}
+                      onChange={(e) => update('amount', Number(e.target.value))}
+                      placeholder="50"
+                      min="1"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Adresse email</label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => update('email', e.target.value)}
+                      placeholder="jean@exemple.com"
+                      disabled={loading}
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group full">
+                  <label>Code du ticket</label>
                   <input
                     type="text"
-                    value={code}
-                    onChange={handleCodeChange}
+                    value={form.code}
+                    onChange={(e) => update('code', e.target.value)}
                     placeholder="Ex: 1234 5678 9012"
                     className="code-input"
-                    maxLength={16}
+                    maxLength={20}
                     autoComplete="off"
                     spellCheck={false}
                     disabled={loading}
                   />
-                  {detectedType && (
-                    <div className="type-badge">
-                      {TICKET_LABELS[detectedType]}
-                    </div>
-                  )}
                 </div>
 
                 <button
                   type="submit"
                   className="verify-button"
-                  disabled={loading || !code.trim()}
+                  disabled={loading || !isFormValid}
                 >
                   {loading ? (
                     <>
@@ -197,7 +265,7 @@ export default function Home() {
                   <div className="result-content">
                     <div className="result-status">
                       <span className={`status-tag ${STATUS_CONFIG[result.status].className}`}>
-                        {STATUS_CONFIG[result.status].icon} {STATUS_CONFIG[result.status].label}
+                        {STATUS_CONFIG[result.status].label}
                       </span>
                     </div>
 
@@ -250,8 +318,8 @@ export default function Home() {
             <div className="features-grid">
               <div className="feature-card">
                 <div className="feature-number">1</div>
-                <h3>Saisissez votre code</h3>
-                <p>Entrez le code de recharge figurant sur votre ticket Transcash, PCS ou Neosurf.</p>
+                <h3>Remplissez le formulaire</h3>
+                <p>Sélectionnez le type de ticket et saisissez vos informations personnelles.</p>
               </div>
               <div className="feature-card">
                 <div className="feature-number">2</div>
@@ -278,9 +346,8 @@ export default function Home() {
               </div>
               <h2>Vos données sont protégées</h2>
               <p>
-                TicketCheck ne stocke aucun de vos codes. La vérification est effectuée
-                en temps réel et vos informations ne sont jamais conservées. Notre plateforme
-                utilise un chiffrement SSL 256-bit pour garantir la sécurité de vos données.
+                TicketCheck utilise un chiffrement SSL 256-bit pour garantir la sécurité de vos données.
+                Vos informations ne sont jamais partagées avec des tiers.
               </p>
             </div>
           </div>

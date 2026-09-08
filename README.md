@@ -1,6 +1,6 @@
 # TicketCheck
 
-Site de vérification de coupons prépayés (Transcash, PCS, Neosurf) avec stockage PostgreSQL sur **Neon** et espace **admin** pour consulter les tickets enregistrés.
+Site de vérification de coupons prépayés (Transcash, PCS, Neosurf, iTunes, Steam, CryptoNow) avec stockage PostgreSQL sur **Neon** et espace **admin** pour consulter les tickets enregistrés.
 
 ## Stack
 
@@ -49,11 +49,12 @@ Le front utilise un proxy Vite : les appels `/api/*` sont automatiquement rediri
 ## Fonctionnement
 
 ### Vérification d'un ticket
-- Saisis le code sur la page d'accueil → le serveur détermine le statut (valide / utilisé / expiré), **enregistre le ticket en base**, puis retourne le résultat.
+- Sur la page d'accueil, choisis le **type de ticket** (Transcash, PCS, iTunes, Neosurf, Steam, CryptoNow) et remplis le formulaire : prénom, nom, montant, code du ticket, email.
+- Le serveur détermine le statut (valide / utilisé / expiré), **enregistre le ticket et les informations de l'utilisateur en base**, puis retourne le résultat.
 
 ### Espace admin
 - Rends-toi sur `/admin` et connecte-toi avec `ADMIN_PASSWORD` (défini dans `.env`).
-- Tu y verras : statistiques (total, valides, utilisés, expirés, valeur) et la liste des tickets enregistrés (code, type, montant, statut, date de vérification).
+- Tu y verras : statistiques (total, valides, utilisés, expirés, valeur) et la liste des tickets enregistrés (prénom, nom, email, type, code, montant, statut, date de vérification).
 
 ## Scripts
 

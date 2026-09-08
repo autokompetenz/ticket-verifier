@@ -42,31 +42,38 @@ export function createApp() {
 
   app.post('/api/verify', async (req, res) => {
     try {
-      const { code } = req.body || {};
+      const { code, type, firstName, lastName, amount, email } = req.body || {};
 
       if (!code || typeof code !== 'string') {
         return res.status(400).json({ success: false, error: 'Code manquant' });
       }
 
+      if (!firstName || !lastName || !email || !amount) {
+        return res.status(400).json({ success: false, error: 'Tous les champs sont requis.' });
+      }
+
       const cleaned = code.replace(/[\s.-]/g, '').trim();
 
-      if (cleaned.length < 6) {
+      if (cleaned.length < 4) {
         return res.status(400).json({
           success: false,
           error: 'Le code saisi est trop court. Veuillez vérifier et réessayer.',
         });
       }
 
-      const ticket = computeStatus(cleaned);
+      const ticket = computeStatus(cleaned, type);
 
       await pool.query(
-        `INSERT INTO tickets (code, type, amount, status, last_used, expiry_date)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+        `INSERT INTO tickets (code, type, amount, status, first_name, last_name, email, last_used, expiry_date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           ticket.code,
-          ticket.type,
-          ticket.amount,
+          type || ticket.type,
+          amount || ticket.amount,
           ticket.status,
+          firstName,
+          lastName,
+          email,
           ticket.lastUsed ?? null,
           ticket.expiryDate ?? null,
         ]
@@ -82,7 +89,7 @@ export function createApp() {
   app.get('/api/admin/tickets', requireAdmin, async (req, res) => {
     try {
       const result = await pool.query(
-        `SELECT id, code, type, amount, status, last_used, expiry_date, verified_at
+        `SELECT id, code, type, amount, status, first_name, last_name, email, last_used, expiry_date, verified_at
          FROM tickets
          ORDER BY verified_at DESC
          LIMIT 500`

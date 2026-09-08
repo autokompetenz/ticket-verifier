@@ -22,13 +22,25 @@ const DEMO_TICKETS = {
   },
 };
 
+const TYPE_PREFIXES = {
+  itunes: /^IT/,
+  steam: /^ST/,
+  cryptonow: /^CN/,
+  pcs: /^PCS/,
+  transcash: /^TC/,
+};
+
 export function detectTicketType(code) {
-  const cleaned = code.replace(/[\s.-]/g, '');
+  const cleaned = code.replace(/[\s.-]/g, '').toUpperCase();
 
   if (/^\d{12}$/.test(cleaned)) return 'transcash';
   if (/^\d{14}$/.test(cleaned)) return 'pcs';
   if (/^\d{10}$/.test(cleaned)) return 'neosurf';
   if (/^\d{4}-\d{4}-\d{4}$/.test(code.trim())) return 'transcash';
+
+  for (const [type, re] of Object.entries(TYPE_PREFIXES)) {
+    if (re.test(cleaned)) return type;
+  }
 
   return null;
 }
@@ -41,7 +53,7 @@ export function formatCode(code) {
   return code;
 }
 
-export function computeStatus(code) {
+export function computeStatus(code, type) {
   const cleaned = code.replace(/[\s.-]/g, '');
   const hash = Array.from(cleaned).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
 
@@ -49,7 +61,7 @@ export function computeStatus(code) {
     return DEMO_TICKETS[formatCode(cleaned)];
   }
 
-  const ticketType = detectTicketType(code) || 'transcash';
+  const ticketType = type || detectTicketType(code) || 'transcash';
   const amounts = [15, 25, 50, 75, 100, 150, 200];
   const amount = amounts[hash % amounts.length];
 
@@ -58,7 +70,7 @@ export function computeStatus(code) {
       type: ticketType,
       amount,
       status: 'used',
-      code: formatCode(cleaned),
+      code: code,
       lastUsed: '05/09/2026 à 09:15',
     };
   }
@@ -68,7 +80,7 @@ export function computeStatus(code) {
       type: ticketType,
       amount,
       status: 'expired',
-      code: formatCode(cleaned),
+      code: code,
       expiryDate: '12/2024',
     };
   }
@@ -77,7 +89,7 @@ export function computeStatus(code) {
     type: ticketType,
     amount,
     status: 'valid',
-    code: formatCode(cleaned),
+    code: code,
     expiryDate: '03/2027',
   };
 }

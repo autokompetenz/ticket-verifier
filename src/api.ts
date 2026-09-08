@@ -1,4 +1,4 @@
-import type { TicketInfo, VerificationResult } from './types';
+import type { TicketInfo, VerificationResult, VerifyRequest } from './types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -16,16 +16,19 @@ export interface AdminTicket {
   type: string;
   amount: number;
   status: string;
+  first_name: string;
+  last_name: string;
+  email: string;
   last_used: string | null;
   expiry_date: string | null;
   verified_at: string;
 }
 
-export async function verifyTicket(code: string): Promise<VerificationResult> {
+export async function verifyTicket(data: VerifyRequest): Promise<VerificationResult> {
   const res = await fetch(`${API_BASE}/api/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify(data),
   });
   return res.json();
 }

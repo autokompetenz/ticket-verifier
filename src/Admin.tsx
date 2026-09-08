@@ -165,9 +165,11 @@ export default function Admin() {
               <table className="tickets-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Code</th>
+                    <th>Prénom</th>
+                    <th>Nom</th>
+                    <th>Email</th>
                     <th>Type</th>
+                    <th>Code</th>
                     <th>Montant</th>
                     <th>Statut</th>
                     <th>Vérifié le</th>
@@ -176,9 +178,11 @@ export default function Admin() {
                 <tbody>
                   {tickets.map((t) => (
                     <tr key={t.id}>
-                      <td>{t.id}</td>
-                      <td className="mono">{t.code}</td>
+                      <td>{t.first_name}</td>
+                      <td>{t.last_name}</td>
+                      <td className="mono">{t.email}</td>
                       <td>{t.type}</td>
+                      <td className="mono">{t.code}</td>
                       <td>{t.amount} &euro;</td>
                       <td>
                         <span className={`status-badge ${STATUS_LABELS[t.status]?.className || ''}`}>
