@@ -4,6 +4,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export interface AdminStats {
   total: number;
+  pending: number;
   valid: number;
   used: number;
   expired: number;
@@ -62,6 +63,17 @@ export async function adminGetTickets(token: string): Promise<AdminTicket[]> {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erreur');
   return data.tickets;
+}
+
+export async function adminUpdateStatus(token: string, id: number, status: string): Promise<AdminTicket> {
+  const res = await fetch(`${API_BASE}/api/admin/tickets/${id}/status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ status }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data.ticket;
 }
 
 export type { TicketInfo };

@@ -155,6 +155,10 @@
   text-align: center;
 }
 
+.stat-card.pending {
+  border-top: 3px solid #3b82f6;
+}
+
 .stat-card.valid {
   border-top: 3px solid var(--primary);
 }
@@ -264,12 +268,65 @@
   font-size: 0.8rem;
 }
 
+.status-select {
+  padding: 5px 10px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.status-select:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.status-select.st-pending {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.status-select.st-valid {
+  background: var(--success-light);
+  color: var(--primary-dark);
+  border-color: #bbf7d0;
+}
+
+.status-select.st-used {
+  background: var(--warning-light);
+  color: var(--warning);
+  border-color: #fde68a;
+}
+
+.status-select.st-expired {
+  background: #e2e8f0;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+
+.status-select.st-invalid {
+  background: var(--danger-light);
+  color: var(--danger);
+  border-color: #fca5a5;
+}
+
 .status-badge {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.status-badge.st-pending {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .status-badge.st-valid {

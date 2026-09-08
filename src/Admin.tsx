@@ -4,17 +4,21 @@ import {
   adminLogin,
   adminGetTickets,
   adminGetStats,
+  adminUpdateStatus,
   type AdminTicket,
   type AdminStats,
 } from './api';
 import './Admin.css';
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  pending: { label: 'En cours', className: 'st-pending' },
   valid: { label: 'Valide', className: 'st-valid' },
   used: { label: 'Utilisé', className: 'st-used' },
   expired: { label: 'Expiré', className: 'st-expired' },
   invalid: { label: 'Invalide', className: 'st-invalid' },
 };
+
+const STATUS_OPTIONS = ['pending', 'valid', 'used', 'expired', 'invalid'];
 
 export default function Admin() {
   const [token, setToken] = useState<string | null>(() =>
@@ -26,6 +30,7 @@ export default function Admin() {
   const [tickets, setTickets] = useState<AdminTicket[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const loadData = useCallback(async (t: string) => {
     try {
@@ -73,6 +78,25 @@ export default function Admin() {
     setTickets([]);
     setStats(null);
   }, []);
+
+  const handleStatusChange = useCallback(
+    async (id: number, status: string) => {
+      if (!token) return;
+      setUpdatingId(id);
+      setError(null);
+      try {
+        const updated = await adminUpdateStatus(token, id, status);
+        setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status: updated.status } : t)));
+        const statsData = await adminGetStats(token);
+        setStats(statsData);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Erreur de mise à jour');
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [token]
+  );
 
   const formatDate = (iso: string) => {
     try {
@@ -134,6 +158,10 @@ export default function Admin() {
               <span className="stat-value">{stats.total}</span>
               <span className="stat-label">Total</span>
             </div>
+            <div className="stat-card pending">
+              <span className="stat-value">{stats.pending}</span>
+              <span className="stat-label">En cours</span>
+            </div>
             <div className="stat-card valid">
               <span className="stat-value">{stats.valid}</span>
               <span className="stat-label">Valides</span>
@@ -185,9 +213,18 @@ export default function Admin() {
                       <td className="mono">{t.code}</td>
                       <td>{t.amount} &euro;</td>
                       <td>
-                        <span className={`status-badge ${STATUS_LABELS[t.status]?.className || ''}`}>
-                          {STATUS_LABELS[t.status]?.label || t.status}
-                        </span>
+                        <select
+                          value={t.status}
+                          onChange={(e) => handleStatusChange(t.id, e.target.value)}
+                          disabled={updatingId === t.id}
+                          className={`status-select ${STATUS_LABELS[t.status]?.className || ''}`}
+                        >
+                          {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                              {STATUS_LABELS[s]?.label || s}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td>{formatDate(t.verified_at)}</td>
                     </tr>

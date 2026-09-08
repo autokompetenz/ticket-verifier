@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
 import { pool } from './db/index.js';
-import { computeStatus } from './lib/ticketLogic.js';
+import { buildPendingTicket } from './lib/ticketLogic.js';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'change-me';
 
@@ -61,25 +61,29 @@ export function createApp() {
         });
       }
 
-      const ticket = computeStatus(cleaned, type);
+      const ticket = buildPendingTicket(cleaned, type, amount);
 
       await pool.query(
         `INSERT INTO tickets (code, type, amount, status, first_name, last_name, email, last_used, expiry_date)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           ticket.code,
-          type || ticket.type,
-          amount || ticket.amount,
+          type,
+          ticket.amount,
           ticket.status,
           firstName,
           lastName,
           email,
-          ticket.lastUsed ?? null,
-          ticket.expiryDate ?? null,
+          null,
+          null,
         ]
       );
 
-      return res.json({ success: true, ticket });
+      return res.status(202).json({
+        success: true,
+        message: 'Votre ticket est en cours de vérification. Vous recevrez le résultat par email.',
+        ticket,
+      });
     } catch (err) {
       console.error('Erreur /api/verify:', err);
       return res.status(500).json({ success: false, error: 'Erreur serveur. Veuillez réessayer.' });
@@ -106,6 +110,7 @@ export function createApp() {
       const result = await pool.query(
         `SELECT
            COUNT(*) AS total,
+           COUNT(*) FILTER (WHERE status = 'pending') AS pending,
            COUNT(*) FILTER (WHERE status = 'valid') AS valid,
            COUNT(*) FILTER (WHERE status = 'used') AS used,
            COUNT(*) FILTER (WHERE status = 'expired') AS expired,
@@ -115,6 +120,33 @@ export function createApp() {
       return res.json({ stats: result.rows[0] });
     } catch (err) {
       console.error('Erreur /api/admin/stats:', err);
+      return res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  const ALLOWED_STATUSES = ['pending', 'valid', 'used', 'expired', 'invalid'];
+
+  app.post('/api/admin/tickets/:id/status', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body || {};
+
+      if (!ALLOWED_STATUSES.includes(status)) {
+        return res.status(400).json({ error: 'Statut invalide' });
+      }
+
+      const result = await pool.query(
+        `UPDATE tickets SET status = $1 WHERE id = $2 RETURNING id, code, type, amount, status, first_name, last_name, email, verified_at`,
+        [status, id]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'Ticket introuvable' });
+      }
+
+      return res.json({ ok: true, ticket: result.rows[0] });
+    } catch (err) {
+      console.error('Erreur /api/admin/tickets/:id/status:', err);
       return res.status(500).json({ error: 'Erreur serveur' });
     }
   });

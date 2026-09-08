@@ -21,6 +21,7 @@ const TICKET_LABELS: Record<TicketType, string> = {
 };
 
 const STATUS_CONFIG: Record<VerificationStatus, { label: string; className: string }> = {
+  pending: { label: 'En cours de vérification', className: 'status-pending' },
   valid: { label: 'Valide', className: 'status-valid' },
   used: { label: 'Déjà utilisé', className: 'status-used' },
   invalid: { label: 'Invalide', className: 'status-invalid' },
@@ -89,7 +90,6 @@ export default function Home() {
             </div>
             <span className="logo-text">TicketCheck</span>
           </div>
-          <a href="/admin" className="admin-link">Admin</a>
         </div>
       </header>
 
@@ -241,6 +241,12 @@ export default function Home() {
               {result && (
                 <div className={`result-card result-${result.status}`}>
                   <div className={`result-icon ${STATUS_CONFIG[result.status].className}`}>
+                    {result.status === 'pending' && (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                    )}
                     {result.status === 'valid' && (
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -268,6 +274,13 @@ export default function Home() {
                         {STATUS_CONFIG[result.status].label}
                       </span>
                     </div>
+
+                    {result.status === 'pending' && (
+                      <p className="pending-note">
+                        Votre ticket est en cours de vérification. Le résultat vous sera
+                        communiqué par email dès que la vérification sera terminée.
+                      </p>
+                    )}
 
                     <div className="result-details">
                       <div className="detail-row">

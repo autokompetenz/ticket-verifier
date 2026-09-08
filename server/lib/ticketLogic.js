@@ -1,27 +1,3 @@
-const DEMO_TICKETS = {
-  '1234-5678-9012': {
-    type: 'transcash',
-    amount: 50,
-    status: 'valid',
-    code: '1234-5678-9012',
-    expiryDate: '12/2026',
-  },
-  '9876-5432-1098': {
-    type: 'pcs',
-    amount: 100,
-    status: 'used',
-    code: '9876-5432-1098',
-    lastUsed: '01/09/2026 à 14:32',
-  },
-  '1111-2222-3333': {
-    type: 'neosurf',
-    amount: 25,
-    status: 'expired',
-    code: '1111-2222-3333',
-    expiryDate: '06/2025',
-  },
-};
-
 const TYPE_PREFIXES = {
   itunes: /^IT/,
   steam: /^ST/,
@@ -53,43 +29,11 @@ export function formatCode(code) {
   return code;
 }
 
-export function computeStatus(code, type) {
-  const cleaned = code.replace(/[\s.-]/g, '');
-  const hash = Array.from(cleaned).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-
-  if (DEMO_TICKETS[formatCode(cleaned)]) {
-    return DEMO_TICKETS[formatCode(cleaned)];
-  }
-
-  const ticketType = type || detectTicketType(code) || 'transcash';
-  const amounts = [15, 25, 50, 75, 100, 150, 200];
-  const amount = amounts[hash % amounts.length];
-
-  if (hash % 7 === 0) {
-    return {
-      type: ticketType,
-      amount,
-      status: 'used',
-      code: code,
-      lastUsed: '05/09/2026 à 09:15',
-    };
-  }
-
-  if (hash % 11 === 0) {
-    return {
-      type: ticketType,
-      amount,
-      status: 'expired',
-      code: code,
-      expiryDate: '12/2024',
-    };
-  }
-
+export function buildPendingTicket(code, type, amount) {
   return {
-    type: ticketType,
-    amount,
-    status: 'valid',
-    code: code,
-    expiryDate: '03/2027',
+    code,
+    type,
+    amount: Number(amount),
+    status: 'pending',
   };
 }

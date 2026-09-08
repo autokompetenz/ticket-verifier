@@ -1,6 +1,6 @@
 export type TicketType = 'transcash' | 'pcs' | 'itunes' | 'neosurf' | 'steam' | 'cryptonow';
 
-export type VerificationStatus = 'valid' | 'used' | 'invalid' | 'expired';
+export type VerificationStatus = 'pending' | 'valid' | 'used' | 'invalid' | 'expired';
 
 export interface TicketInfo {
   type: TicketType;
