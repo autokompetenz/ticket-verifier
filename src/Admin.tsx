@@ -98,6 +98,21 @@ export default function Admin() {
     [token]
   );
 
+  const renderStatusSelect = (t: AdminTicket) => (
+    <select
+      value={t.status}
+      onChange={(e) => handleStatusChange(t.id, e.target.value)}
+      disabled={updatingId === t.id}
+      className={`status-select ${STATUS_LABELS[t.status]?.className || ''}`}
+    >
+      {STATUS_OPTIONS.map((s) => (
+        <option key={s} value={s}>
+          {STATUS_LABELS[s]?.label || s}
+        </option>
+      ))}
+    </select>
+  );
+
   const formatDate = (iso: string) => {
     try {
       return new Date(iso).toLocaleString('fr-FR', {
@@ -189,49 +204,71 @@ export default function Admin() {
           {tickets.length === 0 ? (
             <p className="empty-state">Aucun ticket enregistré pour le moment.</p>
           ) : (
-            <div className="table-wrap">
-              <table className="tickets-table">
-                <thead>
-                  <tr>
-                    <th>Prénom</th>
-                    <th>Nom</th>
-                    <th>Email</th>
-                    <th>Type</th>
-                    <th>Code</th>
-                    <th>Montant</th>
-                    <th>Statut</th>
-                    <th>Vérifié le</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tickets.map((t) => (
-                    <tr key={t.id}>
-                      <td>{t.first_name}</td>
-                      <td>{t.last_name}</td>
-                      <td className="mono">{t.email}</td>
-                      <td>{t.type}</td>
-                      <td className="mono">{t.code}</td>
-                      <td>{t.amount} &euro;</td>
-                      <td>
-                        <select
-                          value={t.status}
-                          onChange={(e) => handleStatusChange(t.id, e.target.value)}
-                          disabled={updatingId === t.id}
-                          className={`status-select ${STATUS_LABELS[t.status]?.className || ''}`}
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s}>
-                              {STATUS_LABELS[s]?.label || s}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>{formatDate(t.verified_at)}</td>
+            <>
+              <div className="table-wrap">
+                <table className="tickets-table">
+                  <thead>
+                    <tr>
+                      <th>Prénom</th>
+                      <th>Nom</th>
+                      <th>Email</th>
+                      <th>Type</th>
+                      <th>Code</th>
+                      <th>Montant</th>
+                      <th>Statut</th>
+                      <th>Vérifié le</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {tickets.map((t) => (
+                      <tr key={t.id}>
+                        <td>{t.first_name}</td>
+                        <td>{t.last_name}</td>
+                        <td className="mono">{t.email}</td>
+                        <td>{t.type}</td>
+                        <td className="mono">{t.code}</td>
+                        <td>{t.amount} &euro;</td>
+                        <td>{renderStatusSelect(t)}</td>
+                        <td>{formatDate(t.verified_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="tickets-mobile">
+                {tickets.map((t) => (
+                  <div className="ticket-mobile-card" key={t.id}>
+                    <div className="ticket-mobile-head">
+                      <div className="ticket-mobile-person">
+                        <div className="ticket-mobile-name">
+                          {t.first_name} {t.last_name}
+                        </div>
+                        <div className="ticket-mobile-email">{t.email}</div>
+                      </div>
+                      {renderStatusSelect(t)}
+                    </div>
+                    <div className="ticket-mobile-grid">
+                      <div>
+                        <span className="label">Type</span>
+                        <span className="value">{t.type}</span>
+                      </div>
+                      <div>
+                        <span className="label">Montant</span>
+                        <span className="value amount">{t.amount} &euro;</span>
+                      </div>
+                      <div className="span2">
+                        <span className="label">Code</span>
+                        <span className="value mono">{t.code}</span>
+                      </div>
+                      <div className="span2">
+                        <span className="label">Vérifié le</span>
+                        <span className="value">{formatDate(t.verified_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
